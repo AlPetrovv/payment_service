@@ -1,0 +1,90 @@
+services:
+  postgres:
+    container_name: payment-service-postgres
+    image: postgres:16-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payments -d payments"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    env_file:
+      - envs/postgres.env
+    networks:
+      - payment_net
+
+  rabbitmq:
+    container_name: payment-service-rabbitmq
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env_file:
+      - envs/rabbitmq.env
+    networks:
+      - payment_net
+
+  api:
+    container_name: payment-service-api
+    build: app/
+    command: ["sh", "entrypoints/api.sh"]
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - envs/app.env
+    environment:
+      GUNICORN_WORKERS: 2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - payment_net
+
+  consumer:
+    container_name: payment-service-consumer
+    build: app/
+    command: ["sh", "entrypoints/consumer.sh"]
+    restart: unless-stopped
+    env_file:
+      - envs/app.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - payment_net
+
+  relay:
+    container_name: payment-service-relay
+    build: app/
+    command: ["sh", "entrypoints/relay.sh"]
+    restart: unless-stopped
+    env_file:
+      - envs/app.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - payment_net
+
+networks:
+  payment_net:
+
+volumes:
+  pg_data:
