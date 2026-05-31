@@ -1,12 +1,11 @@
 import logging
 import sys
 
-import loguru
 from loguru import logger
 
-from infra.core.config import settings, ROOT_DIR
+from infra.core.config import settings, DATA_DIR
 
-LOG_DIR = ROOT_DIR / "logs/app"
+LOG_DIR = DATA_DIR / "logs/app"
 LOG_FORMAT = "{time:YYYY-MM-DDTHH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}"
 
 THIRD_PARTY_LOGGERS = (
