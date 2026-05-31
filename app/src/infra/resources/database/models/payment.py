@@ -10,7 +10,7 @@ from infra.resources.database.models.mixins import UUIDPKMixin, CreatedAtMixin, 
 
 
 class Payment(UUIDPKMixin, CreatedAtMixin, ProcessedAtMixin, Base):
-    amount: Mapped[Decimal] = mapped_column(Numeric(20, 4))
+    amount: Mapped[Decimal] = mapped_column(Numeric(20, 2))
     currency: Mapped[str] = mapped_column(String(3))
     description: Mapped[str] = mapped_column(Text, default="")
     meta: Mapped[dict] = mapped_column("metadata", JSONB, nullable=False, default=dict)
