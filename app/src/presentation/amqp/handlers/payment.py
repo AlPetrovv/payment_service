@@ -1,12 +1,11 @@
 from uuid import UUID
 
-from dependency_injector.wiring import Provide, inject
+from faststream import Context
 from faststream.rabbit import RabbitMessage
 from loguru import logger
 from pydantic import BaseModel
 
 from domain.enums import OutboxEventType, PaymentStatus
-from infra.di.ioc import Container
 from infra.resources.broker.broker import broker, payments_exchange, payments_queue
 from infra.resources.database.manager import DatabaseSessionManager
 from infra.resources.database.repos.uow import UOW
@@ -18,14 +17,15 @@ class PaymentMessage(BaseModel):
     payment_id: UUID
 
 
-@broker.subscriber(payments_queue, exchange=payments_exchange, retry=False)
-@inject
+@broker.subscriber(payments_queue, exchange=payments_exchange)
 async def handle_payment(
     msg: PaymentMessage,
     raw_msg: RabbitMessage,
-    uow: UOW = Provide[Container.db.uow],
-    gateway: PaymentGateway = Provide[Container.services.gateway],
+    db_manager: DatabaseSessionManager = Context("db_manager"),
+    gateway: PaymentGateway = Context("gateway"),
 ) -> None:
+    uow = UOW(db_manager)
+
     payment_id = msg.payment_id
     attempt = get_attempt(raw_msg)
 
@@ -56,7 +56,7 @@ async def handle_payment(
                 },
             )
 
-        # success
+        # success!!!
         await raw_msg.ack()
         logger.info("Payment {} → {}", payment_id, new_status.value)
 

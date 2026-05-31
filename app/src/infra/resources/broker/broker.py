@@ -84,7 +84,6 @@ _BINDINGS = (
 
 
 async def setup_broker(broker_: RabbitBroker) -> None:
-    """Declare every exchange/queue and bind them."""
     declared_exchanges = {}
     for exchange in (payments_exchange, webhooks_exchange, retry_exchange):
         declared_exchanges[exchange.name] = await broker_.declare_exchange(exchange)

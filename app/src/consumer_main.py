@@ -1,5 +1,6 @@
 import asyncio
 
+from faststream import context
 from loguru import logger
 
 from infra.core.config import settings
@@ -11,18 +12,19 @@ from infra.resources.broker.broker import broker, setup_broker
 import presentation.amqp.handlers.payment  # noqa: F401
 import presentation.amqp.handlers.webhook  # noqa: F401
 
-HANDLER_MODULES = [
-    "presentation.amqp.handlers.payment",
-    "presentation.amqp.handlers.webhook",
-]
-
 
 async def main() -> None:
     setup_logging(level=settings.log_level)
 
     container = build_container()
-    container.wire(modules=HANDLER_MODULES)  # resolve Provide[...] in the handlers
     db_manager = container.db.db_manager()
+    gateway = container.services.gateway()
+    webhook_sender = container.services.webhook_sender()
+
+    # Expose dependencies to the handlers via FastStream's context.
+    context.set_global("db_manager", db_manager)
+    context.set_global("gateway", gateway)
+    context.set_global("webhook_sender", webhook_sender)
 
     logger.info("Consumer starting")
     async with broker:
@@ -31,7 +33,7 @@ async def main() -> None:
         try:
             await asyncio.Future()
         finally:
-            await container.services.webhook_sender().aclose()
+            await webhook_sender.aclose()
             await db_manager.dispose()
             logger.info("Consumer stopped")
 

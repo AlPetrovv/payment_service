@@ -4,14 +4,16 @@ from uuid import UUID, uuid4
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from application.interfaces.repos import IOutboxRepo
+from domain.enums import OutboxEventType
 from infra.resources.database.models.outbox import OutboxEvent
 
 
-class DBOutboxRepo:
+class DBOutboxRepo(IOutboxRepo):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create(self, aggregate_id: UUID, event_type: str, payload: dict) -> None:
+    async def create(self, aggregate_id: UUID, event_type: OutboxEventType, payload: dict) -> None:
         event = OutboxEvent(
             id=uuid4(),
             aggregate_id=aggregate_id,
@@ -26,7 +28,7 @@ class DBOutboxRepo:
             .where(OutboxEvent.published == False)  # noqa: E712
             .order_by(OutboxEvent.created_at)
             .limit(limit)
-            .with_for_update(skip_locked=True)
+            .with_for_update(skip_locked=True)  # don't lock rows that are already locked
         )
         return list(result.scalars().all())
 

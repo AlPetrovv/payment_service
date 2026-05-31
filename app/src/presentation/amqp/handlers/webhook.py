@@ -1,11 +1,10 @@
 from uuid import UUID
 
-from dependency_injector.wiring import Provide, inject
+from faststream import Context
 from faststream.rabbit import RabbitMessage
 from loguru import logger
 from pydantic import BaseModel
 
-from infra.di.ioc import Container
 from infra.resources.broker.broker import broker, webhooks_exchange, webhooks_queue
 from presentation.amqp.retry import get_attempt, schedule_retry_or_dead
 from presentation.amqp.services.webhook import WebhookSender
@@ -18,11 +17,10 @@ class WebhookMessage(BaseModel):
 
 
 @broker.subscriber(webhooks_queue, exchange=webhooks_exchange, retry=False)
-@inject
 async def handle_webhook(
     msg: WebhookMessage,
     raw_msg: RabbitMessage,
-    webhook_sender: WebhookSender = Provide[Container.services.webhook_sender],
+    webhook_sender: WebhookSender = Context("webhook_sender"),
 ) -> None:
     attempt = get_attempt(raw_msg)
     try:

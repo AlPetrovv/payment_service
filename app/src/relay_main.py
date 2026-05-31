@@ -22,7 +22,6 @@ async def main() -> None:
         try:
             await relay.run()
         finally:
-            await db_manager.dispose()
             logger.info("OutboxRelay service stopped")
 
 

@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from application.interfaces.repos import IOutboxRepo, IPaymentRepo
 from infra.resources.database.manager import DatabaseSessionManager
 from infra.resources.database.repos.payment import DBPaymentRepo
 from infra.resources.database.repos.outbox import DBOutboxRepo
@@ -30,9 +31,9 @@ class UOW:
         await self.session.rollback()
 
     @property
-    def payments(self) -> DBPaymentRepo:
+    def payments(self) -> IPaymentRepo:
         return DBPaymentRepo(self.session)
 
     @property
-    def outbox(self) -> DBOutboxRepo:
+    def outbox(self) -> IOutboxRepo:
         return DBOutboxRepo(self.session)
