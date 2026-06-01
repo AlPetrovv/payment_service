@@ -9,7 +9,7 @@ make build && make run
 ```
 
 API: http://localhost:8000  
-RabbitMQ Management: http://localhost:15672 (guest / guest)
+RabbitMQ Management: http://localhost:15672
 
 
 ## Архитектура
@@ -20,7 +20,7 @@ RabbitMQ Management: http://localhost:15672 (guest / guest)
 1. Создание заказа через API 
    1. Проверка Idempotency-Key
    2. Создание payment и outbox
-2. Outbox relay для created payments через сервис relay(можно сделать в одном сервисе - api)
+2. Outbox relay для created payments через сервис relay(можно сделать в одном сервисе -> api или отдельным сервисом сос своей кодовой базой)  
    1. Поиск в БД unpublished payments и отправка их через брокер по очередям через "gateway"(maps) в зависимости от статуса
 3. status = created
    1. Сделать random process и обновить статус payment 
@@ -41,8 +41,8 @@ payments.new  --(attempt >= N)-->         payments.dead
 
 ## Плюсы
 1. Отказоустойчивость, при отключении relay -> api будет получать новые payments, consumer будет ждать новые сообщения и обрабатывать текущие
-2. Идемпотентность создания 
-3. Outbox pattern обеспечивает  атомарность а и независимость api. 
+2. Идемпотентность создания
+3. Outbox pattern обеспечивает  атомарность а и независимость с api
 ## Минусы
 1. Одна кодовая база - Можно сделать core сервис для платежей и отдельные сервисы для relay, consumer
 
