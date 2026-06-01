@@ -8,7 +8,7 @@ from infra.core.logger import setup_logging
 from infra.di.ioc import build_container
 from infra.resources.broker.broker import broker, setup_broker
 
-# Importing the handler modules registers their @broker.subscriber decorators.
+
 import presentation.amqp.handlers.payment  # noqa: F401
 import presentation.amqp.handlers.webhook  # noqa: F401
 
